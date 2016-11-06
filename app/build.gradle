@@ -1,0 +1,137 @@
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-android-extensions:$kotlin_version"
+    }
+}
+
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'realm-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    def globalConfiguration = rootProject.extensions.getByName("ext")
+
+    compileSdkVersion globalConfiguration.getAt("androidCompileSdkVersion")
+    buildToolsVersion globalConfiguration.getAt("androidBuildToolsVersion")
+
+    defaultConfig {
+        applicationId globalConfiguration.getAt("androidApplicationId")
+        minSdkVersion globalConfiguration.getAt("androidMinSdkVersion")
+        targetSdkVersion globalConfiguration.getAt("androidTargetSdkVersion")
+        versionCode globalConfiguration.getAt("androidVersionCode")
+        versionName globalConfiguration.getAt("androidVersionName")
+        testInstrumentationRunner globalConfiguration.getAt("testInstrumentationRunner")
+        testApplicationId globalConfiguration.getAt("testApplicationId")
+
+        generatedDensities = []
+    }
+
+    aaptOptions {
+        additionalParameters "--no-version-vectors"
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    packagingOptions {
+        exclude 'LICENSE.txt'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('../config/buildsystem/android-debug-key.jks')
+            storePassword 'androiddebugkey'
+            keyAlias 'androidkey'
+            keyPassword 'androidkey'
+        }
+    }
+
+    buildTypes {
+        debug {
+            versionNameSuffix '-dev'
+            applicationIdSuffix '.dev'
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a' //select ABIs to build APKs for
+            universalApk true //generate an additional APK that contains all the ABIs
+        }
+    }
+
+    // map for the version code
+    project.ext.versionCodes = ['armeabi': 1, 'armeabi-v7a': 2, 'arm64-v8a': 3, 'mips': 5, 'mips64': 6, 'x86': 8, 'x86_64': 9]
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def newApkName
+
+            //If there's no ZipAlign task it means that our artifact will be unaligned and we need to mark it as such.
+            if (output.zipAlign) {
+                newApkName = appName + "-${variant.versionName}.apk"
+            } else {
+                newApkName = appName + "-${variant.versionName}-unaligned.apk"
+            }
+            output.outputFile = new File(output.outputFile.parent, newApkName)
+
+            // assign different version code for each output
+            output.versionCodeOverride =
+                    project.ext.versionCodes.get(output.getFilter(com.android.build.OutputFile.ABI), 0) * 1000000 + android.defaultConfig.versionCode
+        }
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+}
+
+dependencies {
+    def presentationDependencies = rootProject.ext.presentationDependencies
+    def presentationTestDependencies = rootProject.ext.presentationTestDependencies
+    def dataDependencies = rootProject.ext.dataDependencies
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    kapt presentationDependencies.daggerCompiler
+    compile presentationDependencies.dagger
+    compile presentationDependencies.supportRecyclerView
+    compile presentationDependencies.supportCardView
+    compile presentationDependencies.supportDesign
+    compile presentationDependencies.supportAppCompat
+
+    provided presentationDependencies.javaxAnnotation
+
+    androidTestCompile presentationTestDependencies.mockito
+    androidTestCompile presentationTestDependencies.dexmaker
+    androidTestCompile presentationTestDependencies.dexmakerMockito
+    androidTestCompile presentationTestDependencies.espresso
+    androidTestCompile presentationTestDependencies.espressoIntents
+    androidTestCompile presentationTestDependencies.testingRunner
+    androidTestCompile presentationTestDependencies.testingRules
+    androidTestCompile presentationTestDependencies.supportAnnotations
+}
+
+kapt {
+    generateStubs = true
+}
