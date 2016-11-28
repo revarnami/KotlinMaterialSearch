@@ -9,11 +9,12 @@ import android.util.Log
 import android.view.*
 import com.uziarnami.searchmaterialview.interfaces.OnSearchActionListener
 import com.uziarnami.searchmaterialview.interfaces.OnSearchListener
+import com.uziarnami.searchmaterialview.interfaces.OnSimpleSearchActionListener
 import com.uziarnami.searchmaterialview.widget.MaterialSearchView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
-class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListener {
+class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListener, OnSimpleSearchActionListener {
     private val TAG = "MainActivity"
 
     private var mSearchViewAdded = false
@@ -31,11 +32,10 @@ class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListen
 
         mWindowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-        Log.e(TAG, "onCreate: masuk")
         setupToolbar()
         mSearchView = MaterialSearchView(this, null)
         mSearchView.setOnSearchListener(this)
-//        mSearchView.setSearchResultsListener(this)
+        mSearchView.setSearchResultsListener(this)
         mSearchView.setHintText("Search")
     }
 
@@ -44,7 +44,6 @@ class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListen
         if (menu != null) {
             searchItem = menu.findItem(R.id.search)
             searchItem.setOnMenuItemClickListener {
-                Log.e(TAG, "onCreateOptionsMenu: masuk")
                 mSearchView.display()
                 openKeyboard()
                 true
@@ -73,7 +72,6 @@ class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListen
 
         if (toolbar != null) {
             // Delay adding SearchView until Toolbar has finished loading
-            Log.e(TAG, "setupToolbar: not null")
             toolbar.post(Runnable {
                 if (!mSearchViewAdded && mWindowManager != null) {
                     mWindowManager.addView(mSearchView,
@@ -131,7 +129,6 @@ class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListen
     }
 
     override fun onCancelSearch() {
-        Log.e(TAG, "onCancelSearch: masuk")
         searchActive = false
         mSearchView.hide()
     }
