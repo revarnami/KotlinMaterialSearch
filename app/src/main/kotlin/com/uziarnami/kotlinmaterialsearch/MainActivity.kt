@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity(), OnSearchActionListener, OnSearchListen
         setupToolbar()
         mSearchView = MaterialSearchView(this, null)
         mSearchView.setOnSearchListener(this)
+        mSearchView.setSimpleSearchResultsListener(this)
         mSearchView.setSearchResultsListener(this)
         mSearchView.setHintText("Search")
     }

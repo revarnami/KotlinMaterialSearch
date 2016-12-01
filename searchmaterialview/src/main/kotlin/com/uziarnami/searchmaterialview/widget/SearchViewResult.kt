@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.AsyncTask
 import android.os.Handler
 import android.os.Message
-import android.util.Log
 import android.view.View
 import android.widget.AbsListView
 import android.widget.AdapterView
@@ -46,7 +45,6 @@ class SearchViewResult(context: Context, searchQuery: String) : AdapterView.OnIt
             if (msg.what == TRIGGER_SEARCH) {
                 clearAdapter()
                 val sequence = msg.obj as String
-                Log.e("msg", sequence)
                 mSearch = SearchTask()
                 mSearch!!.execute(sequence)
             }

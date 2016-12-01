@@ -14,7 +14,6 @@ import android.text.InputType
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.util.AttributeSet
-import android.util.Log
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -40,13 +39,15 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
     private lateinit var fadeIn: Animation
     private lateinit var fadeOut: Animation
     private lateinit var mOnSearchListener: OnSearchListener
-    private lateinit var searchListener: OnSimpleSearchActionListener
+    private lateinit var simpleSearchListener: OnSimpleSearchActionListener
+    private lateinit var searchListener: OnSearchActionListener
 
     init {
         val factory = LayoutInflater.from(context)
 
         view = factory.inflate(R.layout.toolbar_searchview, this)
         mContext = context
+        searchListener = this
 
         view.searchET.inputType = InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         fadeIn = AnimationUtils.loadAnimation(getContext().applicationContext, android.R.anim.fade_in)
@@ -106,7 +107,7 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
         } else {
             searchViewResults = SearchViewResult(mContext, trim)
             searchViewResults!!.setListView(materialSearchLV)
-            searchViewResults!!.setSearchProvidersListener(this)
+            searchViewResults!!.setSearchProvidersListener(searchListener)
         }
     }
 
@@ -128,19 +129,15 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
 
     override fun onClick(v: View?) {
         val id = if (v != null) v.getId() else null
-        Log.e(TAG, "onClick: id = $id searchbackid = ${view.searchBackIV.id}")
         if (id == view.searchBackIV.id) {
-            Log.e(TAG, "onClick: masuk back")
             onCancelSearch()
         } else if (id == view.clearSearchIV.id) {
-            Log.e(TAG, "onClick: masuk clear")
             clearSearch()
         }
     }
 
     private fun onCancelSearch() {
         if (mOnSearchListener != null) {
-            Log.e(TAG, "onCancelSearch: masuk")
             mOnSearchListener.onCancelSearch()
         } else {
             hide()
@@ -151,7 +148,6 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
         if (isSearchViewVisible()) return
         visibility = View.VISIBLE
         mOnSearchListener.searchViewOpened()
-        Log.e(TAG, "display: masuk display")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val animator = ViewAnimationUtils.createCircularReveal(view.cardSearch,
                     view.cardSearch.getWidth() - Util().dpToPx(context, 56f),
@@ -207,7 +203,6 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
     }
 
     fun hide() {
-        Log.e(TAG, "hide: masuk")
         if (!isSearchViewVisible()) return
         mOnSearchListener.searchViewClosed()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -262,7 +257,7 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
     }
 
     override fun onItemClicked(item: String) {
-        this.searchListener.onItemClicked(item)
+        this.simpleSearchListener.onItemClicked(item)
     }
 
     override fun showProgress(show: Boolean) {
@@ -282,11 +277,11 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
     }
 
     override fun onScroll() {
-        this.searchListener.onScroll()
+        this.simpleSearchListener.onScroll()
     }
 
     override fun error(localizedMessage: String) {
-        this.searchListener.error(localizedMessage)
+        this.simpleSearchListener.error(localizedMessage)
     }
 
     /*
@@ -308,7 +303,11 @@ class MaterialSearchView constructor(context: Context, attrs: AttributeSet?, def
         toggleClearSearchButton(query)
     }
 
-    fun setSearchResultsListener(listener: OnSimpleSearchActionListener) {
+    fun setSimpleSearchResultsListener(listener: OnSimpleSearchActionListener) {
+        this.simpleSearchListener = listener
+    }
+
+    fun setSearchResultsListener(listener: OnSearchActionListener) {
         this.searchListener = listener
     }
 
